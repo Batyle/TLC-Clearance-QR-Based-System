@@ -40,6 +40,7 @@ export async function setOfficeStatus(studentId, office, status, staffOffice) {
   await update(ref(db, `students/${studentId}`), { lastUpdated: serverTimestamp(), lastUpdatedBy: staffOffice });
 }
 export const watchStudent = (studentId, cb) => onValue(ref(db, `students/${studentId}`), (snap) => cb(snap.val()));
+export const watchStudents = (cb, onError) => onValue(ref(db, "students"), (snap) => cb(snap.val() || {}), onError);
 export const getStudents = async () => (await get(ref(db, "students"))).val() || {};
 export const getStudent = async (id) => (await get(ref(db, `students/${id}`))).val();
 export const getStaff = async () => (await get(ref(db, "staff"))).val() || {};
