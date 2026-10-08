@@ -11,12 +11,10 @@ export async function createQRToken(studentId, ttlMinutes = TTL_MINUTES) {
   if (oldToken) await update(ref(db, `qrTokens/${oldToken}`), { used: true, revoked: true, usedAt: Date.now() });
   const token = makeToken(); const createdAt = Date.now(); const expiresAt = createdAt + ttlMinutes * 60 * 1000;
   await set(ref(db, `qrTokens/${token}`), { studentId, createdAt, expiresAt, used: false, usedAt: null, usedByOffice: null });
-  await update(ref(db, `students/${studentId}/qr`), { token, createdAt, expiresAt, used: false, emailSent: false });
   return { token, expiresAt, verifyUrl: buildVerifyUrl(token, studentId) };
 }
 export async function markEmailSent(studentId, token) {
-  await update(ref(db, `students/${studentId}/qr`), { emailSent: true, emailSentAt: serverTimestamp() });
-  await update(ref(db, `qrTokens/${token}`), { emailSent: true });
+  await update(ref(db, `qrTokens/${token}`), { emailSent: true, emailSentAt: serverTimestamp() });
 }
 export async function resolveToken(token, office, fallbackStudentId = "") {
   const normalizedToken = tokenFromQRValue(token);
@@ -42,7 +40,6 @@ export async function resolveToken(token, office, fallbackStudentId = "") {
     const latest = claim.snapshot.val();
     return { ok: false, reason: latest?.used ? "used" : latest ? "expired" : "not_found" };
   }
-  await update(ref(db, `students/${record.studentId}/qr`), { used: true, usedAt: now, usedByOffice: office || null });
   return { ok: true, token: normalizedToken, student, studentId: record.studentId };
 }
 export async function findStudentByEmail(email) {
