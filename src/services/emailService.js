@@ -1,5 +1,7 @@
-const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+// Keep these configurable through Vite while supporting deployments that do
+// not supply the ignored local .env file.
+const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_2cb03iz";
+const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "template_z92e3rq";
 // EmailJS public keys are safe to include in browser builds. Keep the env value
 // configurable while providing the project's key for deployments without .env.
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "8nvcTW8G6rXutzdGM";
