@@ -21,6 +21,7 @@ const emailjs = {
 export function initEmail() { if (!initialized) { emailjs.init({ publicKey: PUBLIC_KEY }); initialized = true; } }
 export function sendQRCodeEmail({ toEmail, toName, studentId, course, verifyUrl, qrImageUrl, expiresAt, clearanceSummary }) {
   initEmail();
+<<<<<<< HEAD
   const params = {
     to_email: toEmail, to_name: toName, reply_to: toEmail, student_id: studentId,
     course, verify_url: verifyUrl, qr_image_url: qrImageUrl,
@@ -29,5 +30,8 @@ export function sendQRCodeEmail({ toEmail, toName, studentId, course, verifyUrl,
     from_name: `${toName} (${studentId})`,
     message: `Your clearance QR verification link: ${verifyUrl}\nValid until: ${new Date(expiresAt).toLocaleString()}\n${clearanceSummary}`,
   };
+=======
+  const params = { to_email: toEmail, to_name: toName, reply_to: toEmail, student_id: studentId, course, verify_url: verifyUrl, qr_image_url: qrImageUrl, expires_at: new Date(expiresAt).toLocaleString(), clearance_summary: clearanceSummary };
+>>>>>>> 745318e781b58dce7c117af074a67a6b4c419ef4
   return emailjs.send(SERVICE_ID, TEMPLATE_ID, params, { publicKey: PUBLIC_KEY });
 }
