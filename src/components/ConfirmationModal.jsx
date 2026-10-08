@@ -1,0 +1,7 @@
+import { useEffect, useRef } from "react";
+export default function ConfirmationModal({ open, title = "Confirm action", message, onConfirm, onClose, loading }) {
+  const dialog = useRef(null);
+  useEffect(() => { if (!open) return; const keydown = (event) => { if (event.key === "Escape") onClose(); if (event.key === "Enter") { event.preventDefault(); onConfirm(); } if (event.key === "Tab") { const buttons = dialog.current?.querySelectorAll("button:not([disabled])"); if (!buttons?.length) return; const first = buttons[0], last = buttons[buttons.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } }; document.addEventListener("keydown", keydown); dialog.current?.querySelector("button")?.focus(); return () => document.removeEventListener("keydown", keydown); }, [open, onClose, onConfirm]);
+  if (!open) return null;
+  return <div className="modal-backdrop"><section ref={dialog} className="modal" role="dialog" aria-modal="true" aria-labelledby="confirmation-title"><h2 id="confirmation-title">{title}</h2><p>{message}</p><div className="actions"><button className="button secondary" type="button" onClick={onClose}>Cancel</button><button className="button primary" type="button" onClick={onConfirm} disabled={loading}>{loading ? "Saving…" : "Confirm"}</button></div></section></div>;
+}
