@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { ref, get, set, update, onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
-=======
-import { ref, get, set, update, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
->>>>>>> 745318e781b58dce7c117af074a67a6b4c419ef4
 import { db } from "../firebase";
 import { buildVerifyUrl, makeToken } from "./qrService";
 
@@ -22,16 +18,11 @@ export async function markEmailSent(studentId, token) {
   await update(ref(db, `students/${studentId}/qr`), { emailSent: true, emailSentAt: serverTimestamp() });
   await update(ref(db, `qrTokens/${token}`), { emailSent: true });
 }
-<<<<<<< HEAD
 export async function resolveToken(token, office) {
-=======
-export async function resolveToken(token) {
->>>>>>> 745318e781b58dce7c117af074a67a6b4c419ef4
   const tokenRef = ref(db, `qrTokens/${token}`); const tokenSnap = await get(tokenRef); const record = tokenSnap.val();
   if (!record) return { ok: false, reason: "not_found" };
   const now = Date.now();
   if (now > record.expiresAt) return { ok: false, reason: "expired" };
-<<<<<<< HEAD
   if (record.used) return { ok: false, reason: "used" };
   const studentSnap = await get(ref(db, `students/${record.studentId}`)); const student = studentSnap.val();
   if (!student) return { ok: false, reason: "student_missing" };
@@ -44,12 +35,6 @@ export async function resolveToken(token) {
     return { ok: false, reason: latest?.used ? "used" : latest ? "expired" : "not_found" };
   }
   await update(ref(db, `students/${record.studentId}/qr`), { used: true, usedAt: now, usedByOffice: office || null });
-=======
-  if (record.used && now - (record.usedAt || 0) > 2 * 60 * 1000) return { ok: false, reason: "used" };
-  const studentSnap = await get(ref(db, `students/${record.studentId}`)); const student = studentSnap.val();
-  if (!student) return { ok: false, reason: "student_missing" };
-  if (!record.used) await Promise.all([update(tokenRef, { used: true, usedAt: now }), update(ref(db, `students/${record.studentId}/qr`), { used: true })]);
->>>>>>> 745318e781b58dce7c117af074a67a6b4c419ef4
   return { ok: true, token, student, studentId: record.studentId };
 }
 export async function findStudentByEmail(email) {
@@ -59,22 +44,11 @@ export async function findStudentByEmail(email) {
 }
 export async function setOfficeStatus(studentId, office, status, staffOffice) {
   if (!OFFICES.includes(office)) throw new Error("Invalid office");
-<<<<<<< HEAD
   if (!["approved", "rejected"].includes(status)) throw new Error("Invalid clearance status");
-  await update(ref(db), {
-    [`students/${studentId}/clearanceStatus/${office}`]: status,
-    [`students/${studentId}/lastUpdated`]: serverTimestamp(),
-    [`students/${studentId}/lastUpdatedBy`]: staffOffice,
-  });
+  await update(ref(db), { [`students/${studentId}/clearanceStatus/${office}`]: status, [`students/${studentId}/lastUpdated`]: serverTimestamp(), [`students/${studentId}/lastUpdatedBy`]: staffOffice });
 }
 export const watchStudent = (studentId, cb) => onValue(ref(db, `students/${studentId}`), (snap) => cb(snap.val()));
 export const watchStudents = (cb, onError) => onValue(ref(db, "students"), (snap) => cb(snap.val() || {}), onError);
-=======
-  await update(ref(db, `students/${studentId}/clearanceStatus`), { [office]: status });
-  await update(ref(db, `students/${studentId}`), { lastUpdated: serverTimestamp(), lastUpdatedBy: staffOffice });
-}
-export const watchStudent = (studentId, cb) => onValue(ref(db, `students/${studentId}`), (snap) => cb(snap.val()));
->>>>>>> 745318e781b58dce7c117af074a67a6b4c419ef4
 export const getStudents = async () => (await get(ref(db, "students"))).val() || {};
 export const getStudent = async (id) => (await get(ref(db, `students/${id}`))).val();
 export const getStaff = async () => (await get(ref(db, "staff"))).val() || {};
