@@ -1,9 +1,9 @@
 import { ref, get, set, update, onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 import { db } from "../firebase";
-import { buildVerifyUrl, makeToken } from "./qrService";
+import { buildVerifyUrl, makeToken, tokenFromQRValue } from "./qrService";
 
 export const OFFICES = ["library", "registrar", "dean", "cashier"];
-const TTL_MINUTES = 30;
+const TTL_MINUTES = 24 * 60;
 
 export async function createQRToken(studentId, ttlMinutes = TTL_MINUTES) {
   const studentSnap = await get(ref(db, `students/${studentId}/qr`));
@@ -19,8 +19,15 @@ export async function markEmailSent(studentId, token) {
   await update(ref(db, `qrTokens/${token}`), { emailSent: true });
 }
 export async function resolveToken(token, office) {
-  const tokenRef = ref(db, `qrTokens/${token}`); const tokenSnap = await get(tokenRef); const record = tokenSnap.val();
-  if (!record) return { ok: false, reason: "not_found" };
+  const normalizedToken = tokenFromQRValue(token);
+  const tokenRef = ref(db, `qrTokens/${normalizedToken}`); const tokenSnap = await get(tokenRef); const record = tokenSnap.val();
+  if (!record) {
+    // Earlier versions generated QR codes containing only the student ID.
+    // Keep those already-issued codes usable while new codes remain token-based.
+    const legacyStudentSnap = await get(ref(db, `students/${normalizedToken}`));
+    const legacyStudent = legacyStudentSnap.val();
+    return legacyStudent ? { ok: true, token: normalizedToken, student: legacyStudent, studentId: normalizedToken, legacy: true } : { ok: false, reason: "not_found" };
+  }
   const now = Date.now();
   if (now > record.expiresAt) return { ok: false, reason: "expired" };
   if (record.used) return { ok: false, reason: "used" };
@@ -35,7 +42,7 @@ export async function resolveToken(token, office) {
     return { ok: false, reason: latest?.used ? "used" : latest ? "expired" : "not_found" };
   }
   await update(ref(db, `students/${record.studentId}/qr`), { used: true, usedAt: now, usedByOffice: office || null });
-  return { ok: true, token, student, studentId: record.studentId };
+  return { ok: true, token: normalizedToken, student, studentId: record.studentId };
 }
 export async function findStudentByEmail(email) {
   const snap = await get(ref(db, "students")); const target = email.trim().toLowerCase();
