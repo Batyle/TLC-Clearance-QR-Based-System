@@ -1,0 +1,17 @@
+{
+  "rules": {
+    "students": {
+      ".read": true,
+      ".write": true,
+      "$studentId": { ".validate": "newData.hasChildren(['name','email'])" }
+    },
+    "staff": { ".read": true, ".write": true },
+    "qrTokens": {
+      ".read": true,
+      "$token": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['studentId','expiresAt'])"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "students": {
+    "2021-00123": { "name": "Juan Dela Cruz", "email": "juan@example.com", "course": "BSIT", "password": "1234", "role": "student", "clearanceStatus": { "library": "pending", "registrar": "approved", "dean": "pending", "cashier": "pending" }, "qr": { "token": "", "createdAt": 0, "expiresAt": 0, "used": false, "emailSent": false } },
+    "2021-00456": { "name": "Maria Santos", "email": "maria@example.com", "course": "BSCS", "password": "1234", "role": "student", "clearanceStatus": { "library": "pending", "registrar": "pending", "dean": "pending", "cashier": "pending" }, "qr": { "token": "", "createdAt": 0, "expiresAt": 0, "used": false, "emailSent": false } },
+    "2021-00789": { "name": "Pedro Reyes", "email": "pedro@example.com", "course": "BSED", "password": "1234", "role": "student", "clearanceStatus": { "library": "approved", "registrar": "approved", "dean": "approved", "cashier": "approved" }, "qr": { "token": "", "createdAt": 0, "expiresAt": 0, "used": false, "emailSent": false } }
+  },
+  "staff": {
+    "staff-001": { "name": "Ms. Cruz", "email": "library@example.com", "password": "1234", "office": "library", "role": "staff" },
+    "staff-002": { "name": "Mr. Lim", "email": "registrar@example.com", "password": "1234", "office": "registrar", "role": "staff" }
+  },
+  "qrTokens": {}
+}
