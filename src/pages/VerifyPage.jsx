@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { findStudentByEmail, OFFICES, resolveToken, setOfficeStatus, watchStudent } from "../services/clearanceService";
 import StatusBadge from "../components/StatusBadge";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -7,9 +7,9 @@ import Toast from "../components/Toast";
 const names = { not_found: "Invalid QR Code", expired: "QR Code Expired", used: "QR Code Already Used", student_missing: "Student Not Found" };
 const title = (office) => office[0].toUpperCase() + office.slice(1);
 export default function VerifyPage() {
-  const { token } = useParams(); const [studentState, setStudentState] = useState(null); const [loading, setLoading] = useState(Boolean(token)); const [error, setError] = useState(""); const [email, setEmail] = useState(""); const [message, setMessage] = useState(null); const [acting, setActing] = useState("");
+  const { token } = useParams(); const [searchParams] = useSearchParams(); const [studentState, setStudentState] = useState(null); const [loading, setLoading] = useState(Boolean(token)); const [error, setError] = useState(""); const [email, setEmail] = useState(""); const [message, setMessage] = useState(null); const [acting, setActing] = useState("");
   const attach = useCallback((studentId, student) => { setStudentState({ studentId, student }); return watchStudent(studentId, (updated) => setStudentState({ studentId, student: updated })); }, []);
-  useEffect(() => { if (!token) return; let unsubscribe; setLoading(true); resolveToken(token).then((result) => { if (!result.ok) setError(names[result.reason]); else unsubscribe = attach(result.studentId, result.student); }).catch(() => setError("Unable to verify QR code")).finally(() => setLoading(false)); return () => unsubscribe?.(); }, [token, attach]);
+  useEffect(() => { if (!token) return; let unsubscribe; setLoading(true); resolveToken(token, undefined, searchParams.get("studentId") || "").then((result) => { if (!result.ok) setError(names[result.reason]); else unsubscribe = attach(result.studentId, result.student); }).catch(() => setError("Unable to verify QR code")).finally(() => setLoading(false)); return () => unsubscribe?.(); }, [token, attach, searchParams]);
   const lookup = async (event) => { event.preventDefault(); setLoading(true); setError(""); try { const found = await findStudentByEmail(email); if (!found) setError("Student Not Found"); else attach(found.studentId, found); } catch { setError("Lookup failed. Please try again."); } finally { setLoading(false); } };
   const setStatus = async (office, status) => { const { studentId } = studentState; setActing(office); try { await setOfficeStatus(studentId, office, status, "verify-page"); setMessage({ type: "success", text: `${title(office)} marked ${status}.` }); } catch { setMessage({ type: "error", text: "Unable to update clearance status." }); } finally { setActing(""); } };
   if (loading) return <main className="center-page"><LoadingSpinner label="Verifying QR code…" /></main>;

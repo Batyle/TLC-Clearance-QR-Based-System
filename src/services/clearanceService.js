@@ -1,6 +1,6 @@
 import { ref, get, set, update, onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 import { db } from "../firebase";
-import { buildVerifyUrl, makeToken, tokenFromQRValue } from "./qrService";
+import { buildVerifyUrl, makeToken, studentIdFromQRValue, tokenFromQRValue } from "./qrService";
 
 export const OFFICES = ["library", "registrar", "dean", "cashier"];
 const TTL_MINUTES = 24 * 60;
@@ -12,21 +12,22 @@ export async function createQRToken(studentId, ttlMinutes = TTL_MINUTES) {
   const token = makeToken(); const createdAt = Date.now(); const expiresAt = createdAt + ttlMinutes * 60 * 1000;
   await set(ref(db, `qrTokens/${token}`), { studentId, createdAt, expiresAt, used: false, usedAt: null, usedByOffice: null });
   await update(ref(db, `students/${studentId}/qr`), { token, createdAt, expiresAt, used: false, emailSent: false });
-  return { token, expiresAt, verifyUrl: buildVerifyUrl(token) };
+  return { token, expiresAt, verifyUrl: buildVerifyUrl(token, studentId) };
 }
 export async function markEmailSent(studentId, token) {
   await update(ref(db, `students/${studentId}/qr`), { emailSent: true, emailSentAt: serverTimestamp() });
   await update(ref(db, `qrTokens/${token}`), { emailSent: true });
 }
-export async function resolveToken(token, office) {
+export async function resolveToken(token, office, fallbackStudentId = "") {
   const normalizedToken = tokenFromQRValue(token);
   const tokenRef = ref(db, `qrTokens/${normalizedToken}`); const tokenSnap = await get(tokenRef); const record = tokenSnap.val();
   if (!record) {
     // Earlier versions generated QR codes containing only the student ID.
     // Keep those already-issued codes usable while new codes remain token-based.
-    const legacyStudentSnap = await get(ref(db, `students/${normalizedToken}`));
+    const studentId = fallbackStudentId || studentIdFromQRValue(token) || normalizedToken;
+    const legacyStudentSnap = await get(ref(db, `students/${studentId}`));
     const legacyStudent = legacyStudentSnap.val();
-    return legacyStudent ? { ok: true, token: normalizedToken, student: legacyStudent, studentId: normalizedToken, legacy: true } : { ok: false, reason: "not_found" };
+    return legacyStudent ? { ok: true, token: normalizedToken, student: legacyStudent, studentId, legacy: true } : { ok: false, reason: "not_found" };
   }
   const now = Date.now();
   if (now > record.expiresAt) return { ok: false, reason: "expired" };
