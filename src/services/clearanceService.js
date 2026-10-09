@@ -33,12 +33,18 @@ export async function resolveToken(token, office, fallbackStudentId = "") {
   const studentSnap = await get(ref(db, `students/${record.studentId}`)); const student = studentSnap.val();
   if (!student) return { ok: false, reason: "student_missing" };
   const claim = await runTransaction(tokenRef, (current) => {
-    if (!current || current.used || Date.now() > current.expiresAt) return;
+    // A transaction can first run against an empty local cache. Returning null
+    // lets Firebase retry with the server value instead of aborting the claim.
+    if (current === null) return current;
+    if (current.used || Date.now() > current.expiresAt) return;
     return { ...current, used: true, usedAt: now, usedByOffice: office || null };
   });
   if (!claim.committed) {
-    const latest = claim.snapshot.val();
-    return { ok: false, reason: latest?.used ? "used" : latest ? "expired" : "not_found" };
+    const latest = (await get(tokenRef)).val();
+    if (!latest) return { ok: false, reason: "not_found" };
+    if (latest.used) return { ok: false, reason: "used" };
+    if (Date.now() > latest.expiresAt) return { ok: false, reason: "expired" };
+    return { ok: false, reason: "not_found" };
   }
   return { ok: true, token: normalizedToken, student, studentId: record.studentId };
 }

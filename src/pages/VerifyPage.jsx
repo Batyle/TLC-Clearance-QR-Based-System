@@ -28,7 +28,7 @@ export default function VerifyPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState(null);
   const [acting, setActing] = useState("");
-  const resolved = useRef(""); // guard against StrictMode double-resolve
+  const claims = useRef(new Map());
 
   const attach = useCallback((studentId, student) => {
     setStudentState({ studentId, student });
@@ -39,20 +39,33 @@ export default function VerifyPage() {
 
   useEffect(() => {
     if (!token) return;
-    if (resolved.current === token) return; // bail on StrictMode re-run
-    resolved.current = token;
-
+    const fallbackStudentId = searchParams.get("studentId") || "";
+    const claimKey = `${token}:${fallbackStudentId}`;
+    let claim = claims.current.get(claimKey);
+    if (!claim) {
+      claim = resolveToken(token, undefined, fallbackStudentId);
+      claims.current.set(claimKey, claim);
+    }
+    let cancelled = false;
     let unsubscribe;
     setLoading(true);
-    resolveToken(token, undefined, searchParams.get("studentId") || "")
+    claim
         .then((result) => {
+          if (cancelled) return;
           if (!result.ok) setError(names[result.reason] || "Invalid QR Code");
           else unsubscribe = attach(result.studentId, result.student);
         })
-        .catch(() => setError("Unable to verify QR code"))
-        .finally(() => setLoading(false));
+        .catch(() => {
+          if (!cancelled) setError("Unable to verify QR code");
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
 
-    return () => unsubscribe?.();
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [token, attach, searchParams]);
 
   const lookup = async (event) => {
