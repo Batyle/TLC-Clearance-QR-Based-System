@@ -4,8 +4,10 @@ import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm";
 // locally-generated QR codes point back to the local dev server instead of
 // a hard-coded production URL that may not share the same database.
 const appUrl = () => {
-  const configured = import.meta.env.VITE_PUBLIC_APP_URL;
-  if (configured) return configured.replace(/\/$/, "");
+  const configured = import.meta.env.VITE_PUBLIC_APP_URL?.trim();
+  if (configured && !configured.includes("your-real-deployed-domain")) {
+    return configured.replace(/\/$/, "");
+  }
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin;
   }
